@@ -24,7 +24,7 @@ pub fn hash(data: &[u8]) -> [u8; 64] {
         }
     }
 
-    if data.len() / 54 > 0 {
+    if data.len() % 54 > 0 {
         let block_data = &data[count as usize * 54..];
         let this_block = confuse_key(&Block512::from_bytes(&generate_block(
             block_data,
