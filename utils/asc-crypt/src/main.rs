@@ -1,6 +1,8 @@
-use ascipher::decrypt::decrypt;
-use ascipher::encrypt::encrypt;
 use clap::Parser;
+use std::fs::*;
+use std::io::{Read, Result as IOResult, Write};
+
+const BUFFER_SIZE: usize = 4096;
 
 #[derive(Parser, Debug)]
 
@@ -17,26 +19,53 @@ struct Args {
     key: String,
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> IOResult<()> {
     let args = Args::parse();
 
     if args.encrypt {
-        let data = std::fs::read(&args.input)?;
         let mut key = [0; 32];
         for (i, k) in args.key.as_bytes().iter().enumerate() {
             key[i] = *k;
         }
-        let data = encrypt(&data, &key);
-        std::fs::write(&args.output, &data)?;
+        let mut cipher = ascipher::encrypt::BlockCipher::new(&key);
+        let mut input_f = File::open(&args.input)?;
+        let mut out_f = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(&args.output)?;
+        out_f.write_all(&cipher.nonce.to_be_bytes())?;
+        loop {
+            let mut buffer = [0; BUFFER_SIZE];
+            let len = input_f.read(&mut buffer)?;
+            if len == 0 {
+                break;
+            }
+            out_f.write_all(&cipher.encrypt_any(&buffer[..len]))?;
+        }
     }
     if args.decrypt {
-        let data = std::fs::read(&args.input)?;
+        let mut input_f = File::open(args.input)?;
+        let mut nonce = [0_u8; 8];
+        input_f.read_exact(&mut nonce)?;
+        let nonce = u64::from_be_bytes(nonce);
         let mut key = [0; 32];
         for (i, k) in args.key.as_bytes().iter().enumerate() {
             key[i] = *k;
         }
-        let data = decrypt(&data, &key);
-        std::fs::write(&args.output, &data)?;
+        let mut cipher = ascipher::encrypt::BlockCipher::new(&key);
+        cipher.nonce = nonce;
+        let mut out_f = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(&args.output)?;
+        loop {
+            let mut buffer = [0; BUFFER_SIZE];
+            let len = input_f.read(&mut buffer)?;
+            if len == 0 {
+                break;
+            }
+            out_f.write_all(&cipher.decrypt_any(&buffer[..len]))?;
+        }
     }
     Ok(())
 }

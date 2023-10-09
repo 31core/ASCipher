@@ -115,10 +115,76 @@ pub fn encrypt_or_decrypt_with_nonce(data: &[u8], key: &[u8; 32], nonce: u64) ->
     bytes
 }
 
+/** Encrypt whole data.
+ *
+ * It will call function `encrypt_or_decrypt_with_nonce` and concat the nonce to the start of the encrypted data. */
 pub fn encrypt(data: &[u8], key: &[u8; 32]) -> Vec<u8> {
     let nonce = rand::random::<u64>();
     let mut bytes = Vec::new();
     bytes.extend(&nonce.to_be_bytes());
     bytes.extend(encrypt_or_decrypt_with_nonce(data, key, nonce));
     bytes
+}
+
+pub struct BlockCipher {
+    pub key: [u8; 32],
+    pub counter: u64,
+    pub nonce: u64,
+
+    last: usize,
+    block: [u8; 64],
+}
+
+impl BlockCipher {
+    pub fn new(key: &[u8; 32]) -> Self {
+        let nonce = rand::random::<u64>();
+        Self {
+            key: *key,
+            counter: 0,
+            nonce,
+
+            last: 0,
+            block: [0; 64],
+        }
+    }
+    fn generate_block(&mut self) {
+        self.block = confuse_key(&Block512::from_bytes(&generate_bytes(
+            &self.key,
+            self.counter,
+            self.nonce,
+        )))
+        .dump();
+    }
+    /** Encrypt data of any length */
+    pub fn encrypt_any(&mut self, data: &[u8]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        if self.last > 0 {
+            for (i, _) in data.iter().enumerate().take(self.last) {
+                bytes.push(data[i] ^ self.block[64 - self.last + i]);
+            }
+        }
+        for (i, _) in data.iter().enumerate().skip(self.last) {
+            if i % 64 == 0 {
+                self.generate_block();
+                self.counter += 1;
+            }
+            bytes.push(data[i] ^ self.block[i % 64]);
+        }
+        self.last = data.len() % 64;
+        bytes
+    }
+    /** Decrypt data of any length */
+    pub fn decrypt_any(&mut self, data: &[u8]) -> Vec<u8> {
+        self.encrypt_any(data)
+    }
+    /** Encrypt a 512-bit block */
+    pub fn encrypt_block(&mut self, block: &[u8; 64]) -> [u8; 64] {
+        let e = encrypt_or_decrypt_with_nonce(block, &self.key, self.nonce);
+        self.counter += 1;
+        e.try_into().unwrap()
+    }
+    /** Decrypt a 512-bit block */
+    pub fn decrypt_block(&mut self, block: &[u8; 64]) -> [u8; 64] {
+        self.encrypt_block(block)
+    }
 }
