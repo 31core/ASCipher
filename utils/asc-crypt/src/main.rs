@@ -27,7 +27,7 @@ fn main() -> IOResult<()> {
         for (i, k) in args.key.as_bytes().iter().enumerate() {
             key[i] = *k;
         }
-        let mut cipher = ascipher::encrypt::BlockCipher::new(&key);
+        let mut cipher = ascipher::encrypt::Cipher512::new(&key);
         let mut input_f = File::open(&args.input)?;
         let mut out_f = OpenOptions::new()
             .write(true)
@@ -52,7 +52,7 @@ fn main() -> IOResult<()> {
         for (i, k) in args.key.as_bytes().iter().enumerate() {
             key[i] = *k;
         }
-        let mut cipher = ascipher::encrypt::BlockCipher::new(&key);
+        let mut cipher = ascipher::encrypt::Cipher512::new(&key);
         cipher.nonce = nonce;
         let mut out_f = OpenOptions::new()
             .write(true)
