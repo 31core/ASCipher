@@ -1,7 +1,5 @@
 #[derive(Clone, Debug)]
-pub struct Block512 {
-    pub items: [[u32; 4]; 4],
-}
+pub struct Block512(pub [[u32; 4]; 4]);
 
 impl Block512 {
     pub fn from_bytes(bytes: &[u8]) -> Self {
@@ -15,7 +13,7 @@ impl Block512 {
                 );
             }
         }
-        Self { items }
+        Self(items)
     }
     /** dump to bytes */
     pub fn dump(&self) -> [u8; 64] {
@@ -23,7 +21,7 @@ impl Block512 {
         for row in 0..4 {
             for cow in 0..4 {
                 bytes[row * 16 + cow * 4..row * 16 + (cow + 1) * 4]
-                    .copy_from_slice(&self.items[row][cow].to_be_bytes());
+                    .copy_from_slice(&self.0[row][cow].to_be_bytes());
             }
         }
         bytes

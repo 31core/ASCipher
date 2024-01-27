@@ -22,6 +22,10 @@ fn hash_stdin() -> std::io::Result<()> {
 }
 
 fn hash_file(path: &str) -> std::io::Result<()> {
+    if std::path::Path::new(path).is_dir() {
+        println!("{}: Is a directory", path);
+        return Ok(());
+    }
     let mut input_f = std::fs::File::open(path)?;
     let mut hasher = Hasher512::default();
     loop {

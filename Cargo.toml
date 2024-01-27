@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2021"
 authors = ["31core"]
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 rand = "0.8.5"

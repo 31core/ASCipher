@@ -1,6 +1,6 @@
 pub mod block;
-pub mod decrypt;
 pub mod encrypt;
+pub mod exports;
 pub mod hash;
 
 const MAGIC_NUMBER: u64 = 0x43a86711fcbcbd9;

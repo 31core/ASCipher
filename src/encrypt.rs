@@ -26,56 +26,38 @@ fn confuse512(a: u32, b: u32, c: u32, d: u32) -> (u32, u32, u32, u32) {
 
 fn confuse512_key_one_round(key: &mut Block512) {
     for row in 0..4 {
-        (
-            key.items[row][0],
-            key.items[row][1],
-            key.items[row][2],
-            key.items[row][3],
-        ) = confuse512(
-            key.items[row][0],
-            key.items[row][1],
-            key.items[row][2],
-            key.items[row][3],
-        );
+        (key.0[row][0], key.0[row][1], key.0[row][2], key.0[row][3]) =
+            confuse512(key.0[row][0], key.0[row][1], key.0[row][2], key.0[row][3]);
     }
 
     for col in 0..4 {
+        (key.0[0][col], key.0[1][col], key.0[2][col], key.0[3][col]) =
+            confuse512(key.0[0][col], key.0[1][col], key.0[2][col], key.0[3][col]);
+    }
+    for i in 0..4 {
         (
-            key.items[0][col],
-            key.items[1][col],
-            key.items[2][col],
-            key.items[3][col],
+            key.0[0][i % 4],
+            key.0[1][(1 + i) % 4],
+            key.0[2][(2 + i) % 4],
+            key.0[3][(3 + i) % 4],
         ) = confuse512(
-            key.items[0][col],
-            key.items[1][col],
-            key.items[2][col],
-            key.items[3][col],
+            key.0[0][i % 4],
+            key.0[1][(1 + i) % 4],
+            key.0[2][(2 + i) % 4],
+            key.0[3][(3 + i) % 4],
         );
     }
     for i in 0..4 {
         (
-            key.items[0][i % 4],
-            key.items[1][(1 + i) % 4],
-            key.items[2][(2 + i) % 4],
-            key.items[3][(3 + i) % 4],
+            key.0[0][(7 - i) % 4],
+            key.0[1][(6 - i) % 4],
+            key.0[2][(5 - i) % 4],
+            key.0[3][(4 - i) % 4],
         ) = confuse512(
-            key.items[0][i % 4],
-            key.items[1][(1 + i) % 4],
-            key.items[2][(2 + i) % 4],
-            key.items[3][(3 + i) % 4],
-        );
-    }
-    for i in 0..4 {
-        (
-            key.items[0][(7 - i) % 4],
-            key.items[1][(6 - i) % 4],
-            key.items[2][(5 - i) % 4],
-            key.items[3][(4 - i) % 4],
-        ) = confuse512(
-            key.items[0][(7 - i) % 4],
-            key.items[1][(6 - i) % 4],
-            key.items[2][(5 - i) % 4],
-            key.items[3][(4 - i) % 4],
+            key.0[0][(7 - i) % 4],
+            key.0[1][(6 - i) % 4],
+            key.0[2][(5 - i) % 4],
+            key.0[3][(4 - i) % 4],
         );
     }
 }
@@ -99,7 +81,7 @@ fn generate_bytes512(key: &[u8; KEY_SIZE_512], count: u64, nonce: u64) -> [u8; B
 }
 
 /** Do encryption or decryption with specified nonce */
-pub fn encrypt_or_decrypt_with_nonce(data: &[u8], key: &[u8; KEY_SIZE_512], nonce: u64) -> Vec<u8> {
+pub fn apply_with_nonce(data: &[u8], key: &[u8; KEY_SIZE_512], nonce: u64) -> Vec<u8> {
     let mut bytes = Vec::new();
     let mut count = 0;
     let mut key_block = generate_bytes512(key, count, nonce);
@@ -117,12 +99,12 @@ pub fn encrypt_or_decrypt_with_nonce(data: &[u8], key: &[u8; KEY_SIZE_512], nonc
 
 /** Encrypt whole data.
  *
- * It will call function `encrypt_or_decrypt_with_nonce` and concat the nonce to the start of the encrypted data. */
-pub fn encrypt512(data: &[u8], key: &[u8; KEY_SIZE_512]) -> Vec<u8> {
+ * It will call function `apply_with_nonce` and concat the nonce to the start of the encrypted data. */
+pub fn apply512(data: &[u8], key: &[u8; KEY_SIZE_512]) -> Vec<u8> {
     let nonce = rand::random::<u64>();
     let mut bytes = Vec::new();
     bytes.extend(&nonce.to_be_bytes());
-    bytes.extend(encrypt_or_decrypt_with_nonce(data, key, nonce));
+    bytes.extend(apply_with_nonce(data, key, nonce));
     bytes
 }
 
@@ -155,8 +137,8 @@ impl Cipher512 {
         )))
         .dump();
     }
-    /** Encrypt data of any length */
-    pub fn encrypt_any(&mut self, data: &[u8]) -> Vec<u8> {
+    /** Apply on any length of data */
+    pub fn apply_any(&mut self, data: &[u8]) -> Vec<u8> {
         let mut bytes = Vec::new();
         if self.last > 0 {
             for (i, _) in data.iter().enumerate().take(self.last) {
@@ -173,18 +155,10 @@ impl Cipher512 {
         self.last = data.len() % BLOCK_SIZE_512;
         bytes
     }
-    /** Decrypt data of any length */
-    pub fn decrypt_any(&mut self, data: &[u8]) -> Vec<u8> {
-        self.encrypt_any(data)
-    }
-    /** Encrypt a 512-bit block */
-    pub fn encrypt_block(&mut self, block: &[u8; BLOCK_SIZE_512]) -> [u8; BLOCK_SIZE_512] {
-        let e = encrypt_or_decrypt_with_nonce(block, &self.key, self.nonce);
+    /** Apply a 512-bit block */
+    pub fn apply_block(&mut self, block: &[u8; BLOCK_SIZE_512]) -> [u8; BLOCK_SIZE_512] {
+        let e = apply_with_nonce(block, &self.key, self.nonce);
         self.counter += 1;
         e.try_into().unwrap()
-    }
-    /** Decrypt a 512-bit block */
-    pub fn decrypt_block(&mut self, block: &[u8; BLOCK_SIZE_512]) -> [u8; BLOCK_SIZE_512] {
-        self.encrypt_block(block)
     }
 }

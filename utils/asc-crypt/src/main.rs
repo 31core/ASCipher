@@ -40,7 +40,7 @@ fn main() -> IOResult<()> {
             if len == 0 {
                 break;
             }
-            out_f.write_all(&cipher.encrypt_any(&buffer[..len]))?;
+            out_f.write_all(&cipher.apply_any(&buffer[..len]))?;
         }
     }
     if args.decrypt {
@@ -64,7 +64,7 @@ fn main() -> IOResult<()> {
             if len == 0 {
                 break;
             }
-            out_f.write_all(&cipher.decrypt_any(&buffer[..len]))?;
+            out_f.write_all(&cipher.apply_any(&buffer[..len]))?;
         }
     }
     Ok(())

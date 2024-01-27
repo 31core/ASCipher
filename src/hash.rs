@@ -23,10 +23,6 @@ pub fn hash512(data: &[u8]) -> [u8; BLOCK_SIZE_512] {
             count,
         )))
         .dump();
-        for i in &this_block {
-            print!("{:x}", i);
-        }
-        println!();
         count += 1;
         for b in 0..BLOCK_SIZE_512 {
             block[b] ^= this_block[b];
@@ -41,11 +37,6 @@ pub fn hash512(data: &[u8]) -> [u8; BLOCK_SIZE_512] {
             count,
         )))
         .dump();
-        for i in &this_block {
-            print!("{:x}", i);
-        }
-        println!();
-        println!("{}", data.len() % ROUND_SIZE);
         for b in 0..BLOCK_SIZE_512 {
             block[b] ^= this_block[b];
         }
