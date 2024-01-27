@@ -1,7 +1,7 @@
 use crate::block::Block512;
 use crate::{encrypt::*, BLOCK_SIZE_512};
 
-const ROUND_SIZE: usize = 54;
+const ROUND_SIZE: usize = 20;
 
 fn generate_block(data: &[u8], size: u16, count: u64) -> [u8; BLOCK_SIZE_512] {
     let mut bytes = [0_u8; BLOCK_SIZE_512];

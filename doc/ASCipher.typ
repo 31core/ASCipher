@@ -3,8 +3,8 @@
 
 #align(center, text(17pt)[ASCipher Spedification])
 
-#align(center, [author: 31core \
-email: #link("31core@tutanota.com")])
+#align(center, [31core \
+#link("31core@tutanota.com")])
 
 #align(center, [*Caution*: This algorithm is not verified yet.]) 
 
@@ -19,7 +19,12 @@ ASCipher (Advanced Stream Cipher) is a standard stream encrytion algorithm, like
 ASCipher is a stream cipher, but can also be used as a hash function.
 
 For symmetric encryption, ASCipher has these following algorithms:
-- ASCipher-512
+
+#table(
+    columns: (auto, auto, auto),
+    [Algorithm], [Block size], [Key size],
+    [ASCipher-512], [512], [256],
+)
 
 = Required parameters & Explaination
 - Constant
@@ -59,18 +64,18 @@ The counter has to be performed an `XOR` operation with a pre-defined constant `
 
 = Confuse Function
 == Definition
-We define an irreversible confusion function `F` which takes 4 arguments ($A$, $B$, $C$ and $D$) and returns 4 arguments ($A_1$, $B_1$, $C_1$ and $D_1$):
+We define an irreversible confusion function $F$ which takes 4 arguments ($A$, $B$, $C$ and $D$) and returns 4 arguments ($A^'$, $B^'$, $C^'$ and $D^'$):
 
 #align(center, [
 $F(A, B, C, D) =$
 
-$A_1 = (A xor B + 1) >> (C mod 32)$
+$A^' = (A xor B plus.square "0xef28") >> (C mod 32)$
 
-$B_1 = (B + C xor 1) << (D mod 32)$
+$B^' = (B plus.square C xor "0x1283") << (D mod 32)$
 
-$C_1 = (C xor D - 1) >> (A mod 32)$
+$C^' = (C xor D plus.square "0x531a") >> (A mod 32)$
 
-$D_1 = (D - A xor 1) << (B mod 32)$])
+$D^' = (D plus.square A xor "0xfb79") << (B mod 32)$])
 
 Note that the shift right (>>) and shift left (<<) operations wrap the overflowed bits to the high or low positions respectively, unlike in typical programming languages.
 
@@ -78,7 +83,7 @@ Note that the shift right (>>) and shift left (<<) operations wrap the overflowe
 The confusion function is a typecal hash function, since we used module operation in our confusion function, one round of calculation can guarantee enough security, but to resist growing high hardware performance (for example ASIC or FPGA), we'll do this calculation for 20 rounds
 
 = Confusing Process
-A obscuring round contains these following steps, we need to do 20 rounds to ensure the random is strong enough.
+A obscuring round contains following 4 steps of confusing operations, we need to do 20 rounds to ensure the random is strong enough.
 
 *Step 1: Confuse rows*
 #align(center, [

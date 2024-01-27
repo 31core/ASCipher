@@ -17,10 +17,10 @@ fn shr(mut num: u32, offset: u32) -> u32 {
 }
 
 fn confuse512(a: u32, b: u32, c: u32, d: u32) -> (u32, u32, u32, u32) {
-    let a1 = shr((a ^ b).wrapping_add(1), c % 32);
-    let b1 = shl(b.wrapping_add(c) ^ 1, d % 32);
-    let c1 = shr((c ^ d).wrapping_sub(1), a % 32);
-    let d1 = shl(d.wrapping_sub(a) ^ 1, b % 32);
+    let a1 = shr((a ^ b).wrapping_add(0xef28), c % 32);
+    let b1 = shl(b.wrapping_add(c) ^ 0x1283, d % 32);
+    let c1 = shr((c ^ d).wrapping_add(0x531a), a % 32);
+    let d1 = shl(d.wrapping_add(a) ^ 0xfb79, b % 32);
     (a1, b1, c1, d1)
 }
 

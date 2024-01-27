@@ -1,9 +1,9 @@
 use ascipher::hash::*;
-use std::io::Read;
+use std::io::{Read, Result as IOResult};
 
 const BUFFER_SIZE: usize = 54 * 4096;
 
-fn hash_stdin() -> std::io::Result<()> {
+fn hash_stdin() -> IOResult<()> {
     let mut hasher = Hasher512::default();
     loop {
         let mut buffer = [0; BUFFER_SIZE];
@@ -21,7 +21,7 @@ fn hash_stdin() -> std::io::Result<()> {
     Ok(())
 }
 
-fn hash_file(path: &str) -> std::io::Result<()> {
+fn hash_file(path: &str) -> IOResult<()> {
     if std::path::Path::new(path).is_dir() {
         println!("{}: Is a directory", path);
         return Ok(());
@@ -44,7 +44,7 @@ fn hash_file(path: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> IOResult<()> {
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() == 1 {
         hash_stdin()?;

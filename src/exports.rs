@@ -1,4 +1,4 @@
-use crate::{encrypt::Cipher512, KEY_SIZE_512};
+use crate::{encrypt::Cipher512, hash::Hasher512, KEY_SIZE_512};
 
 #[no_mangle]
 pub extern "C" fn new_cipher512(key_raw: *const u8) -> *mut u8 {
@@ -29,5 +29,36 @@ pub extern "C" fn cipher512_apply(cipher: *mut u8, data_raw: *mut u8, size: u64)
         unsafe {
             *data_raw.add(i as usize) = data[i as usize];
         };
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn new_hasher512() -> *mut u8 {
+    let hasher = Hasher512::default();
+
+    let layout = std::alloc::Layout::new::<Hasher512>();
+    unsafe {
+        let addr = std::alloc::alloc(layout);
+        std::ptr::write(addr as *mut Hasher512, hasher);
+        addr
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn hash512_update(hasher512: *mut u8, raw_data: *const u8, size: u64) {
+    let hasher = unsafe { &mut *(hasher512 as *mut Hasher512) };
+    let mut data = vec![0; size as usize];
+    for (i, byte) in data.iter_mut().enumerate() {
+        *byte = unsafe { *raw_data.add(i) };
+    }
+    hasher.update(&data);
+}
+
+#[no_mangle]
+pub extern "C" fn hash512_digest(hasher512: *mut u8, hash: *mut u8) {
+    let hasher = unsafe { &mut *(hasher512 as *mut Hasher512) };
+    let result = hasher.digest();
+    for (i, byte) in result.iter().enumerate() {
+        unsafe { *hash.add(i) = *byte };
     }
 }
